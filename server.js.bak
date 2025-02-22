@@ -1,0 +1,139 @@
+const express = require('express');
+   const mongoose = require('mongoose');
+   const bodyParser = require('body-parser');
+   const cors = require('cors');
+
+   const app = express();
+   const PORT = 5000;
+
+   // Middleware
+   app.use(cors());
+   app.use(bodyParser.json());
+
+   // الاتصال بقاعدة البيانات MongoDB
+   mongoose.connect('mongodb+srv://ziadm8445:<db_password>@cluster0.gicfr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+         useNewUrlParser: true,
+         useUnifiedTopology: true,
+     });
+   
+   const userSchema = new mongoose.Schema({
+       name: String,
+       password: Number,
+       details: [{
+           exam: String,
+           points: Number,
+           total: Number,
+       }],
+   });
+
+   const User = mongoose.model('User', userSchema);
+
+   // API Routes
+
+   // الحصول على جميع المستخدمين
+   app.get('/api/users', async (req, res) => {
+       try {
+           const users = await User.find().sort({ password: -1 });
+           res.json(users);
+       } catch (err) {
+           res.status(500).json({ message: err.message });
+       }
+   });
+
+   // إضافة مستخدم جديد
+   app.post('/api/users', async (req, res) => {
+       const { name, password } = req.body;
+
+       const user = new User({
+           name,
+           password,
+           details: [],
+       });
+
+       try {
+           const newUser = await user.save();
+           res.status(201).json(newUser);
+       } catch (err) {
+           res.status(400).json({ message: err.message });
+       }
+   });
+
+   // تعديل مستخدم
+   app.put('/api/users/:id', async (req, res) => {
+       const { id } = req.params;
+       const { name, password } = req.body;
+
+       try {
+           const user = await User.findById(id);
+           if (name) user.name = name;
+           if (password) user.password = password;
+           const updatedUser = await user.save();
+           res.json(updatedUser);
+       } catch (err) {
+           res.status(400).json({ message: err.message });
+       }
+   });
+
+   // حذف مستخدم
+   app.delete('/api/users/:id', async (req, res) => {
+       const { id } = req.params;
+
+       try {
+           await User.findByIdAndDelete(id);
+           res.json({ message: 'User deleted' });
+       } catch (err) {
+           res.status(500).json({ message: err.message });
+       }
+   });
+
+   // إضافة تفاصيل للمستخدم
+   app.post('/api/users/:id/details', async (req, res) => {
+       const { id } = req.params;
+       const { exam, points, total } = req.body;
+
+       try {
+           const user = await User.findById(id);
+           user.details.push({ exam, points, total });
+           const updatedUser = await user.save();
+           res.json(updatedUser);
+       } catch (err) {
+           res.status(400).json({ message: err.message });
+       }
+   });
+
+   // تعديل تفاصيل المستخدم
+   app.put('/api/users/:userId/details/:detailId', async (req, res) => {
+       const { userId, detailId } = req.params;
+       const { exam, points, total } = req.body;
+
+       try {
+           const user = await User.findById(userId);
+           const detail = user.details.id(detailId);
+           if (exam) detail.exam = exam;
+           if (points) detail.points = points;
+           if (total) detail.total = total;
+           const updatedUser = await user.save();
+           res.json(updatedUser);
+       } catch (err) {
+           res.status(400).json({ message: err.message });
+       }
+   });
+
+   // حذف تفاصيل المستخدم
+   app.delete('/api/users/:userId/details/:detailId', async (req, res) => {
+       const { userId, detailId } = req.params;
+
+       try {
+           const user = await User.findById(userId);
+           user.details.id(detailId).remove();
+           const updatedUser = await user.save();
+           res.json(updatedUser);
+       } catch (err) {
+           res.status(400).json({ message: err.message });
+       }
+   });
+
+   // بدء الخادم
+   app.listen(PORT, () => {
+       console.log(`Server is running on port ${PORT}`);
+   });
