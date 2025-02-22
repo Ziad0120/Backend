@@ -15,7 +15,7 @@ app.use(cors({
 app.use(bodyParser.json());
 
 // الاتصال بقاعدة البيانات MongoDB Atlas
-const uri = "هنا هتحط الرابط الكبير دا";
+const uri = "mongodb+srv://ziadm8445:1234@cluster0.gicfr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log("Connected to MongoDB Atlas");
